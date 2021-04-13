@@ -2,6 +2,8 @@ export default `#version 300 es
 precision highp float;
 
 uniform sampler2D uSampler;
+vec3 projCoords;
+float shadow;
 
 in vec4 vColor;
 in vec4 vLightSpacePos;
@@ -20,8 +22,9 @@ void main() {
     projCoords = shadowCalculation(vLightSpacePos);
     projCoords = projCoords * 0.5 + 0.5;
 
-
-    float closestDepth = texture(uSampler, projCoords.xy).r;
+    //error: could not compile WebGL program:ERROR: 0:43: 'texture' : no matching overloaded function found
+    // ERROR: 0:43: 'r' :  field selection requires structure, vector, or interface block on left hand side
+    // float closestDepth = texture(uSampler, projCoords.xy).r;
 
     float currentDepth = projCoords.z; 
     float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
@@ -31,7 +34,6 @@ void main() {
 
     // TODO: evaluate if point is in shadow or not
 
-    float shadow = 0.0;
     vec2 texelSize;
     texelSize.x = float(1 / textureSize(uSampler, 0).x);
     texelSize.y = float(1 / textureSize(uSampler, 0).y);
@@ -39,8 +41,11 @@ void main() {
 
     for(int x = -1; x <= 1; ++x){
         for(int y = -1; y <= 1; ++y){
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y)* texelSize).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+            float pcfDepth = texture(projCoords, projCoords.xy + vec2(x, y)* texelSize).r;
+            shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
+            //bias error
+            // shadow += currentDepth -bias > pcfDepth ? 1.0 : 0.0;
+
         }
     }
     shadow /= 9.0;
