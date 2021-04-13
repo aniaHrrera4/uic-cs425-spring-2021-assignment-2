@@ -75,6 +75,8 @@ For the following functions code from LAB 3 was used.
 *.frag.js: fragment shaders files
     //set color 
     outColor = vColor;
+
+///////////ERROR IN SHADOW FRAGMENT AND VERTEX SHADER ////////
 # GitHub Classroom
 git is a version control system, designed to help developers track different versions of your code, synchronize them across different machines, and collaborate with others. Follow the instructions here to install git on your computer. GitHub is a website that supports git as a service. This a nice tutorial on how to get started with git and GitHub.
 
