@@ -222,8 +222,8 @@ class Layer {
             gl.uniform1i(this.shadowProgram.samplerLoc,0);
 
             gl.uniformMatrix4fv(this.shadowProgram.modelLoc,false, new Float32Array(modelMatrix));
-            gl.uniformMatrix4fv(this.shadowProgram.projectionMatrix,false, new Float32Array(projectionMatrix));
-            gl.uniformMatrix4fv(this.shadowProgram.viewLoc,false, new Float32Array(viewMatrix));
+            gl.uniformMatrix4fv(this.shadowProgram.projectionMatrix,false, new Float32Array(lightProjectionMatrix));
+            gl.uniformMatrix4fv(this.shadowProgram.viewLoc,false, new Float32Array(lightViewMatrix));
             gl.uniform4fv(this.shadowProgram.colorAttribLoc,this.color);
 
             gl.uniform3fv(this.shadowProgram.lightDirAttribLoc, new Float32Array(currLightDirection));
@@ -312,6 +312,11 @@ function updateViewMatrix(centroid){
 
 function updateLightViewMatrix(centroid) {
     // TODO: Light view matrix
+    // var x = radius * Math.cos(radRotate);
+    // var y = radius * Math.sin(radRotate);
+
+    // var pos = add(centroid, [x,y,radius]); 
+
     var lightViewMatrix = identityMatrix();
     return lightViewMatrix;
 }
@@ -341,7 +346,7 @@ function draw() {
     if(!displayShadowmap) {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         // TODO: Second rendering pass, render to screen
-        layers.draw(updateModelMatrix(layers.centroid), updateViewMatrix(layers.centroid), updateProjectionMatrix(),true,fbo.texture);
+        layers.draw(updateModelMatrix(layers.centroid),updateLightViewMatrix(layers.centroid), updateViewMatrix(layers.centroid), updateProjectionMatrix(),updateLightProjectionMatrix(layers.centroid),true,fbo.texture);
     }
     else {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
