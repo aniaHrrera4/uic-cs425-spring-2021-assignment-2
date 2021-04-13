@@ -346,7 +346,7 @@ function draw() {
     if(!displayShadowmap) {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         // TODO: Second rendering pass, render to screen
-        layers.draw(updateModelMatrix(layers.centroid),updateLightViewMatrix(layers.centroid), updateViewMatrix(layers.centroid), updateProjectionMatrix(),updateLightProjectionMatrix(layers.centroid),true,fbo.texture);
+        layers.draw(updateModelMatrix(layers.centroid),updateLightViewMatrix(layers.centroid),updateLightProjectionMatrix(layers.centroid),true,fbo.texture);
     }
     else {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
