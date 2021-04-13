@@ -21,7 +21,7 @@ void main() {
     // TODO: compute shadowmap coordenates 
     float closestDepth = texture(uSampler, projCoords.xy).r;
 
-    float currentDepth = projCoords.z;
+    float currentDepth = projCoords.z; 
     float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
 
     outColor = vec4(vColor.rgb*(1.0-shadow),1.0);
