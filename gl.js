@@ -24,14 +24,22 @@ var displayShadowmap = false;
 class FBO {
     constructor(size) {
         // TODO: Create FBO and texture with size
+        this.texture = createTexture2D(gl, size, size, gl.DEPTH_COMPONENT32F, 0, gl.DEPTH_COMPONENT, gl.FLOAT, null, gl.NEAREST, gl.NEAREST,gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+        this.fbo = createFBO(gl, gl.DEPTH_ATTACHMENT , this.texture);
     }
 
     start() {
-        // TODO: Bind FBO, set viewport to size, clear depth buffer
+        // TODO: Bind FBO, 
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+        //set viewport to size, 
+        gl.viewport(0, 0, this.size, this.size);
+        //clear depth buffer
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     }
 
     stop() {
         // TODO: unbind FBO
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 }
 
@@ -58,6 +66,7 @@ class ShadowMapProgram {
 
     use() {
         // TODO: use program
+        gl.useProgram(this.program);
     }
 }
 
@@ -74,10 +83,24 @@ class RenderToScreenProgram {
         this.samplerLoc = gl.getUniformLocation(this.program, "uSampler");
 
         // TODO: Create quad VBO and VAO
+        this.vert = [-1, -1, 0, 1, -1, 0, 1, 1, 0, 1, 1, 0, -1, 1, 0, -1, -1, 0];
+        this.vertexBuffer = createBuffer(gl, gl.ARRAY_BUFFER, new Float32Array(this.vert));
+        this.vao = createVAO(gl, this.posAttribLoc, this.vertexBuffer);
+
+
     }
 
     draw(texture) {
         // TODO: Render quad and display texture
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        gl.useProgram(this.program);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.uniform1i(this.samplerLoc, 0);
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+
     }
 
 }
@@ -191,7 +214,35 @@ class Layer {
     }
 
     draw(modelMatrix, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, shadowPass = false, texture = null) {
-        // TODO: Handle shadow pass (using ShadowMapProgram) and regular pass (using LayerProgram)
+        // TODO: Handle shadow pass (using ShadowMapProgram) and regular pass (using LayerProgram)\
+        if(shadowPass){
+            this.shadowProgram.use();
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D,texture);
+            gl.uniform1i(this.shadowProgram.samplerLoc,0);
+
+            gl.uniformMatrix4fv(this.shadowProgram.modelLoc,false, new Float32Array(modelMatrix));
+            gl.uniformMatrix4fv(this.shadowProgram.projectionMatrix,false, new Float32Array(projectionMatrix));
+            gl.uniformMatrix4fv(this.shadowProgram.viewLoc,false, new Float32Array(viewMatrix));
+            gl.uniform4fv(this.shadowProgram.colorAttribLoc,this.color);
+
+            gl.uniform3fv(this.shadowProgram.lightDirAttribLoc, new Float32Array(currLightDirection));
+
+            gl.bindVertexArray(this.vao);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_INT, 0);
+
+
+        }else{
+            this.layerProgram.use();
+            gl.uniformMatrix4fv(this.layerProgram.projectionLoc, false, new Float32Array(projectionMatrix));
+            gl.uniformMatrix4fv(this.layerProgram.modelLoc, false, new Float32Array(modelMatrix));
+            gl.uniformMatrix4fv(this.layerProgram.viewLoc, false, new Float32Array(viewMatrix));
+            gl.uniform4fv(this.layerProgram.colorAttribLoc, this.color);
+            gl.bindVertexArray(this.vao);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_INT, 0);
+        }
     }
 }
 
@@ -248,8 +299,15 @@ function updateProjectionMatrix() {
 
 function updateViewMatrix(centroid){
     // TODO: View matrix
-    var viewMatrix = identityMatrix();
-    return viewMatrix;
+    var radRotate = currRotate * Math.PI / 180.0;
+    var maxzoom = 5000;
+    var radius = maxzoom - (currZoom/100.0)*maxzoom*0.99;
+    var x = radius * Math.cos(radRotate);
+    var y = radius * Math.sin(radRotate);
+    return lookAt(add(centroid,[x,y,radius]), centroid, [0,0,1]);
+
+    // var viewMatrix = identityMatrix();
+    // return viewMatrix;
 }
 
 function updateLightViewMatrix(centroid) {
@@ -274,15 +332,21 @@ function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // TODO: First rendering pass, rendering using FBO
+    fbo.start();
+    layers.draw(updateModelMatrix(layers.centroid), updateViewMatrix(layers.centroid), updateProjectionMatrix());
+    //layers.draw(modelMatrix,lightViewMatrix,lightProjectionMatrix)
+    fbo.stop()
 
 
     if(!displayShadowmap) {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         // TODO: Second rendering pass, render to screen
+        layers.draw(updateModelMatrix(layers.centroid), updateViewMatrix(layers.centroid), updateProjectionMatrix(),true,fbo.texture);
     }
     else {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         // TODO: Render shadowmap texture computed in first pass
+        renderToScreen.draw(fbo.texture);
     }
 
     requestAnimationFrame(draw);

@@ -17,6 +17,14 @@ out vec4 vLightSpacePos;
 
 void main() {
     // TODO: If has normals, compute color considering it
+
+    if(uHasNormals){
+        vColor = uColor;
+    }
     // TODO: compute light space position and gl_Position
+    vLightSpacePos = uLightProjection * uLightView * uModel * vec4(position, 1);
+
+    gl_Position = uProjection * uView * uModel * vec4(position, 1);
+
 }
 `;
